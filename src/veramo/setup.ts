@@ -29,6 +29,8 @@ import { ISelectiveDisclosure, SdrMessageHandler, SelectiveDisclosure } from '@v
 import { Resolver } from 'did-resolver';
 import { JsonFileStore } from './utils/json-file-store';
 import { contexts as credential_contexts } from '@transmute/credentials-context'
+import console from 'console';
+import { stringify } from 'querystring';
 
 let databaseFile: string
 const secretKey = '29739248cad1bd1a0fc4d9b75cd4d2990de535baf5caadfdf8d8f86664aa830c'
@@ -44,11 +46,16 @@ let agent: TAgent<
     ICredentialIssuerLD &
     ICredentialIssuerEIP712 &
     ISelectiveDisclosure
->
+> 
 
 export const getAgent = async () => {
-  await setup()
-  return agent 
+  await setup();
+  return agent;
+}
+
+export const setupAgent = async () => {
+  console.log("Setup");
+  await setup();
 }
 
 /* eslint-disable */

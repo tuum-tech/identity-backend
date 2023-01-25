@@ -23,3 +23,15 @@ describe('GET /', () => {
       }, done);
   });
 });
+
+describe('POST /api/v1/credential/register', () => {
+  it('responds with a json message', async () => {
+    let name = "John";
+    let response  = await request(app)
+      .post('/api/v1/credential/register')
+      .send({identifier:'iden', login:'John'})
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+});
