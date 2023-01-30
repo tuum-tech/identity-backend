@@ -63,7 +63,13 @@ const setup = async (options?: IAgentOptions): Promise<boolean> => {
   // This test suite uses a plain JSON file for storage for each agent created.
   // It is important that the same object be used for `DIDStoreJson`/`KeyStoreJson`
   // and `DataStoreJson` if you want to use all the query capabilities of `DataStoreJson`
-  databaseFile = options?.context?.databaseFile || `./tmp/local-database-${Math.random().toPrecision(5)}.json`
+  var fs = require('fs');
+  var localStorageFolder = './tmp';
+
+if (!fs.existsSync(localStorageFolder)){
+    fs.mkdirSync(localStorageFolder);
+}
+  databaseFile = options?.context?.databaseFile || `${localStorageFolder}/local-database-${Math.random().toPrecision(5)}.json`
 
   const jsonFileStore = await JsonFileStore.fromFile(databaseFile)
 

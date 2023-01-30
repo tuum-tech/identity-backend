@@ -9,9 +9,9 @@ type CredentialResponse = string[];
 
 router.use(middlewares.init);
 router.post('/register/', async (req, res) => {
-  console.log('params' + JSON.stringify(req.params));
+  
   console.log('body' + JSON.stringify(req.body));
-  console.log('path' + JSON.stringify(req.path));
+
   let agent = await getAgent();
   let identifier = await agent.didManagerCreate({ kms: 'local', provider: 'did:pkh', options: { network: 'eip155', chainId: "1"} });
   const credential = await agent.createVerifiableCredential({
@@ -28,7 +28,7 @@ router.post('/register/', async (req, res) => {
 });
 
 router.post('/signIn', async (req, res) => {
-
+  console.log('presentation:' + JSON.stringify(req.body.presentation));
   let agent = await getAgent();
 
   let verifiablePresentation: VerifiablePresentation = req.body.presentation as VerifiablePresentation;
