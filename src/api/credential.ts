@@ -1,4 +1,4 @@
-import { IIdentifier, VerifiablePresentation } from '@veramo/core'
+import { IIdentifier, VerifiableCredential, VerifiablePresentation } from '@veramo/core'
 import express, { NextFunction } from 'express'
 import { getAgent, setupAgent } from './../veramo/setup'
 import * as middlewares from './../middlewares'
@@ -40,18 +40,36 @@ router.post('/signIn', async (req, res) => {
   let verifiablePresentation: VerifiablePresentation = req.body
     .presentation as VerifiablePresentation
 
+  // We verify the presentation is signed by the user
   let verified = await agent.verifyPresentation({
     presentation: verifiablePresentation,
   })
 
-  res.json(verified.verified)
+  if (verified){
+    if (verifiablePresentation.verifiableCredential?.length !== 1) {
+      res.json({verified: false, message: "Invalid Presentation: we are expecting a single credential"});
+    }
+
+    let credential: VerifiableCredential = verifiablePresentation.verifiableCredential?.pop() as VerifiableCredential;
+    if (!credential.type?.includes("SiteLoginCredential")){
+      res.json({verified: false, message: "Invalid Credential: we are expecting a credential with type SiteLoginCredential"});
+    }
+
+    let verificationResponse = null;
+    try {
+      verificationResponse = await agent.verifyCredential({ credential });
+      console.log(verificationResponse.error?.message);
+    } catch(e){
+      res.sendStatus(500).json({verified: false, message: e});
+    }
+
+    if (!verificationResponse?.verified){
+      res.json({verified: false, message: `Invalid Credential: ${verificationResponse?.error?.message}`});
+    } else {
+      res.json({ verified: true});
+    }
+  } 
 })
 
 export default router
-function getAgentIdentifier(): Promise<IIdentifier> {
-  throw new Error('Function not implemented.')
-}
 
-function getUserIdentifier(): Promise<IIdentifier> {
-  throw new Error('Function not implemented.')
-}
