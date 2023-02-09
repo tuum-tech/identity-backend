@@ -1,9 +1,16 @@
-import { IIdentifier, VerifiableCredential, VerifiablePresentation } from '@veramo/core'
+import { IIdentifier, ProofFormat, ProofType, VerifiableCredential, VerifiablePresentation } from '@veramo/core'
 import express, { NextFunction } from 'express'
 import { getAgent, setupAgent } from './../veramo/setup'
 import * as middlewares from './../middlewares'
+import NodeCache from 'node-cache'
+import crypto from 'crypto';
+import { createBrotliDecompress } from 'zlib'
+import jwt_decode from "jwt-decode"
+import e from 'express'
 
 const router = express.Router()
+
+const cache = new NodeCache()
 
 type CredentialResponse = string[]
 
@@ -33,12 +40,34 @@ router.post('/register/', async (req, res) => {
   res.json(credential)
 })
 
+
+router.post('/challenge', async (req, res) => {
+  console.log('did:' + JSON.stringify(req.body.did))
+  let nonce = crypto.randomBytes(16).toString('base64');
+
+  // set nounce on cache with ttl = 60s
+  cache.set(req.body.did as string, nonce, 60);
+  res.json({
+    challenge: nonce
+  })
+}) 
+
 router.post('/signIn', async (req, res) => {
   console.log('presentation:' + JSON.stringify(req.body.presentation))
   let agent = await getAgent()
 
   let verifiablePresentation: VerifiablePresentation = req.body
     .presentation as VerifiablePresentation
+
+  // check challenge
+    let a: any = jwt_decode(verifiablePresentation['proof']['jwt']);
+  let did = a['iss'];
+  let cachedNonce = cache.get(did);
+  
+  if (cachedNonce === undefined || cachedNonce !== verifiablePresentation["nonce"]) 
+  {
+    res.json({verified: false, message: "Invalid Nonce"});
+  } 
 
   // We verify the presentation is signed by the user
   let verified = await agent.verifyPresentation({
@@ -54,6 +83,7 @@ router.post('/signIn', async (req, res) => {
     if (!credential.type?.includes("SiteLoginCredential")){
       res.json({verified: false, message: "Invalid Credential: we are expecting a credential with type SiteLoginCredential"});
     }
+
 
     let verificationResponse = null;
     try {
